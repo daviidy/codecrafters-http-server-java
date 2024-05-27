@@ -4,6 +4,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Main {
   public static void main(String[] args) {
@@ -22,9 +24,16 @@ public class Main {
        // Create an InputStream from the client socket.
        BufferedReader inputStream = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 
-       // Read the request line from the HTTP request.
-       String requestLine = inputStream.readLine();
-       System.out.println("Received request: " + requestLine);
+         // Read the request line
+         String requestLine = inputStream.readLine();
+
+         // Read all the headers from the HTTP request.
+         Map<String, String> headers = new HashMap<>();
+         String headerLine;
+         while (!(headerLine = inputStream.readLine()).isEmpty()) {
+             String[] headerParts = headerLine.split(": ");
+             headers.put(headerParts[0], headerParts[1]);
+         }
 
        // Extract the URL path from the request line.
        String urlPath = requestLine.split(" ")[1];
@@ -56,13 +65,16 @@ public class Main {
      }
   }
 
-    private static String getHttpResponse(String urlPath) {
+    private static String getHttpResponse(String urlPath, Map<String, String> headers) {
         String httpResponse;
         if ("/".equals(urlPath)) {
             httpResponse = "HTTP/1.1 200 OK\r\n\r\n";
         } else if (urlPath.startsWith("/echo/")) {
             String echoStr = urlPath.substring(6); // Extract the string after "/echo/"
             httpResponse = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " + echoStr.length() + "\r\n\r\n" + echoStr;
+        } else if ("/user-agent".equals(urlPath)) {
+            String userAgent = headers.get("User-Agent");
+            httpResponse = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " + userAgent.length() + "\r\n\r\n" + userAgent;
         } else {
             httpResponse = "HTTP/1.1 404 Not Found\r\n\r\n";
         }
