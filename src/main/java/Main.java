@@ -4,6 +4,7 @@ import java.net.Socket;
 import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.zip.GZIPOutputStream;
 
 public class Main {
     private static String directory;
@@ -93,7 +94,13 @@ public class Main {
                     }
                 }
                 if (supportsGzip) {
-                    httpResponse = "HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\nContent-Type: text/plain\r\nContent-Length: " + echoStr.length() + "\r\n\r\n" + echoStr;
+                    // Compress the response body using gzip
+                    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                    try (GZIPOutputStream gzipOutputStream = new GZIPOutputStream(byteArrayOutputStream)) {
+                        gzipOutputStream.write(echoStr.getBytes("UTF-8"));
+                    }
+                    byte[] gzipData = byteArrayOutputStream.toByteArray();
+                    httpResponse = "HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\nContent-Type: text/plain\r\nContent-Length: " + gzipData.length + "\r\n\r\n" + new String(gzipData, "ISO-8859-1");
                 } else {
                     httpResponse = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " + echoStr.length() + "\r\n\r\n" + echoStr;
                 }
