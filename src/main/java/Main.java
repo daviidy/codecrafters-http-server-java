@@ -54,6 +54,7 @@ public class Main {
 
             /// Write the HTTP response to the output stream.
             String httpResponse = getHttpResponse(httpMethod, urlPath, headers, inputStream);
+            System.out.println("Sending response: " + httpResponse);
             outputStream.write(httpResponse.getBytes("UTF-8"));
 
             // Close the input and output streams.
@@ -112,7 +113,6 @@ public class Main {
         } else {
             httpResponse = "HTTP/1.1 404 Not Found\r\n\r\n";
         }
-        System.out.println("httpResponse: " + httpResponse);
         return httpResponse;
     }
 }
