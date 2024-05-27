@@ -105,6 +105,8 @@ public class Main {
                     writer.write(line);
                     writer.newLine();
                 }
+            } catch (IOException e) {
+                System.out.println("IOException: " + e.getMessage());
             }
             httpResponse = "HTTP/1.1 201 Created\r\n\r\n";
         } else {
