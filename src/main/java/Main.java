@@ -8,62 +8,64 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Main {
-  public static void main(String[] args) {
-    // You can use print statements as follows for debugging, they'll be visible when running tests.
-    System.out.println("Logs from your program will appear here!");
+    public static void main(String[] args) {
+        System.out.println("Logs from your program will appear here!");
 
-     ServerSocket serverSocket = null;
-     Socket clientSocket = null;
+        try (ServerSocket serverSocket = new ServerSocket(4221)) {
+            serverSocket.setReuseAddress(true);
 
-     try {
-       serverSocket = new ServerSocket(4221);
-       serverSocket.setReuseAddress(true);
-       clientSocket = serverSocket.accept(); // Wait for connection from client.
-       System.out.println("accepted new connection");
+            while (true) {
+                Socket clientSocket = serverSocket.accept(); // Wait for connection from client.
+                System.out.println("accepted new connection");
 
-       // Create an InputStream from the client socket.
-       BufferedReader inputStream = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+                // Handle each client connection in a separate thread.
+                new Thread(() -> handleClient(clientSocket)).start();
+            }
+        } catch (IOException e) {
+            System.out.println("IOException: " + e.getMessage());
+        }
+    }
 
-         // Read the request line
-         String requestLine = inputStream.readLine();
+    private static void handleClient(Socket clientSocket) {
+        try {
+            BufferedReader inputStream = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 
-         // Read all the headers from the HTTP request.
-         Map<String, String> headers = new HashMap<>();
-         String headerLine;
-         while (!(headerLine = inputStream.readLine()).isEmpty()) {
-             String[] headerParts = headerLine.split(": ");
-             headers.put(headerParts[0], headerParts[1]);
-         }
+            // Read the request line
+            String requestLine = inputStream.readLine();
 
-       // Extract the URL path from the request line.
-       String urlPath = requestLine.split(" ")[1];
+            // Read all the headers from the HTTP request.
+            Map<String, String> headers = new HashMap<>();
+            String headerLine;
+            while (!(headerLine = inputStream.readLine()).isEmpty()) {
+                String[] headerParts = headerLine.split(": ");
+                headers.put(headerParts[0], headerParts[1]);
+            }
 
-       // Create an OutputStream from the client socket.
-       OutputStream outputStream = clientSocket.getOutputStream();
+            // Extract the URL path from the request line.
+            String urlPath = requestLine.split(" ")[1];
 
-       // Write the HTTP response to the output stream.
-         String httpResponse = getHttpResponse(urlPath, headers);
-         outputStream.write(httpResponse.getBytes("UTF-8"));
+            OutputStream outputStream = clientSocket.getOutputStream();
 
-       // Close the input and output streams.
-       inputStream.close();
-       outputStream.close();
-     } catch (IOException e) {
-       System.out.println("IOException: " + e.getMessage());
-     }  finally {
-         // Close the client socket and server socket.
-         try {
-             if (clientSocket != null) {
-                 clientSocket.close();
-             }
-             if (serverSocket != null) {
-                 serverSocket.close();
-             }
-         } catch (IOException e) {
-             System.out.println("IOException: " + e.getMessage());
-         }
-     }
-  }
+            // Write the HTTP response to the output stream.
+            String httpResponse = getHttpResponse(urlPath, headers);
+            outputStream.write(httpResponse.getBytes("UTF-8"));
+
+            // Close the input and output streams.
+            inputStream.close();
+            outputStream.close();
+        } catch (IOException e) {
+            System.out.println("IOException: " + e.getMessage());
+        } finally {
+            // Close the client socket.
+            try {
+                if (clientSocket != null) {
+                    clientSocket.close();
+                }
+            } catch (IOException e) {
+                System.out.println("IOException: " + e.getMessage());
+            }
+        }
+    }
 
     private static String getHttpResponse(String urlPath, Map<String, String> headers) {
         String httpResponse;
