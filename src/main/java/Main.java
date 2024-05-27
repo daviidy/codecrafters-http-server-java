@@ -112,7 +112,7 @@ public class Main {
         } else {
             httpResponse = "HTTP/1.1 404 Not Found\r\n\r\n";
         }
-        system.out.println("httpResponse: " + httpResponse);
+        System.out.println("httpResponse: " + httpResponse);
         return httpResponse;
     }
 }
