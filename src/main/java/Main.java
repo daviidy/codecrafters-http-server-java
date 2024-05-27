@@ -74,7 +74,7 @@ public class Main {
     }
 
     private static String getHttpResponse(String httpMethod, String urlPath, Map<String, String> headers, BufferedReader inputStream) throws IOException {
-        String httpResponse = null;
+        String httpResponse;
         if ("GET".equals(httpMethod)) {
             if ("/".equals(urlPath)) {
                 httpResponse = "HTTP/1.1 200 OK\r\n\r\n";
@@ -93,6 +93,8 @@ public class Main {
                 } else {
                     httpResponse = "HTTP/1.1 404 Not Found\r\n\r\n";
                 }
+            } else {
+                httpResponse = "HTTP/1.1 404 Not Found\r\n\r\n";
             }
         } else if ("POST".equals(httpMethod) && urlPath.startsWith("/files/")) {
             String filename = urlPath.substring(7); // Extract the filename after "/files/"
