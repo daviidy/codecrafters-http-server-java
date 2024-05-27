@@ -97,6 +97,7 @@ public class Main {
                 httpResponse = "HTTP/1.1 404 Not Found\r\n\r\n";
             }
         } else if ("POST".equals(httpMethod) && urlPath.startsWith("/files/")) {
+            System.out.println("POST request");
             String filename = urlPath.substring(7); // Extract the filename after "/files/"
             File file = new File(directory, filename);
             try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
