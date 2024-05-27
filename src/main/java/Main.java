@@ -37,6 +37,7 @@ public class Main {
 
             // Read the request line
             String requestLine = inputStream.readLine();
+            String httpMethod = requestLine.split(" ")[0];
 
             // Read all the headers from the HTTP request.
             Map<String, String> headers = new HashMap<>();
@@ -51,8 +52,8 @@ public class Main {
 
             OutputStream outputStream = clientSocket.getOutputStream();
 
-            // Write the HTTP response to the output stream.
-            String httpResponse = getHttpResponse(urlPath, headers);
+            /// Write the HTTP response to the output stream.
+            String httpResponse = getHttpResponse(httpMethod, urlPath, headers, inputStream);
             outputStream.write(httpResponse.getBytes("UTF-8"));
 
             // Close the input and output streams.
@@ -72,25 +73,38 @@ public class Main {
         }
     }
 
-    private static String getHttpResponse(String urlPath, Map<String, String> headers) throws IOException {
-        String httpResponse;
-        if ("/".equals(urlPath)) {
-            httpResponse = "HTTP/1.1 200 OK\r\n\r\n";
-        } else if (urlPath.startsWith("/echo/")) {
-            String echoStr = urlPath.substring(6); // Extract the string after "/echo/"
-            httpResponse = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " + echoStr.length() + "\r\n\r\n" + echoStr;
-        } else if ("/user-agent".equals(urlPath)) {
-            String userAgent = headers.get("User-Agent");
-            httpResponse = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " + userAgent.length() + "\r\n\r\n" + userAgent;
-        } else if (urlPath.startsWith("/files/")) {
+    private static String getHttpResponse(String httpMethod, String urlPath, Map<String, String> headers, BufferedReader inputStream) throws IOException {
+        String httpResponse = null;
+        if ("GET".equals(httpMethod)) {
+            if ("/".equals(urlPath)) {
+                httpResponse = "HTTP/1.1 200 OK\r\n\r\n";
+            } else if (urlPath.startsWith("/echo/")) {
+                String echoStr = urlPath.substring(6); // Extract the string after "/echo/"
+                httpResponse = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " + echoStr.length() + "\r\n\r\n" + echoStr;
+            } else if ("/user-agent".equals(urlPath)) {
+                String userAgent = headers.get("User-Agent");
+                httpResponse = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " + userAgent.length() + "\r\n\r\n" + userAgent;
+            } else if (urlPath.startsWith("/files/")) {
+                String filename = urlPath.substring(7); // Extract the filename after "/files/"
+                File file = new File(directory, filename);
+                if (file.exists()) {
+                    byte[] fileContent = Files.readAllBytes(file.toPath());
+                    httpResponse = "HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: " + fileContent.length + "\r\n\r\n" + new String(fileContent);
+                } else {
+                    httpResponse = "HTTP/1.1 404 Not Found\r\n\r\n";
+                }
+            }
+        } else if ("POST".equals(httpMethod) && urlPath.startsWith("/files/")) {
             String filename = urlPath.substring(7); // Extract the filename after "/files/"
             File file = new File(directory, filename);
-            if (file.exists()) {
-                byte[] fileContent = Files.readAllBytes(file.toPath());
-                httpResponse = "HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: " + fileContent.length + "\r\n\r\n" + new String(fileContent);
-            } else {
-                httpResponse = "HTTP/1.1 404 Not Found\r\n\r\n";
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+                String line;
+                while ((line = inputStream.readLine()) != null && !line.isEmpty()) {
+                    writer.write(line);
+                    writer.newLine();
+                }
             }
+            httpResponse = "HTTP/1.1 201 Created\r\n\r\n";
         } else {
             httpResponse = "HTTP/1.1 404 Not Found\r\n\r\n";
         }
