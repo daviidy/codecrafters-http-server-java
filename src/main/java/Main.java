@@ -81,8 +81,18 @@ public class Main {
                 httpResponse = "HTTP/1.1 200 OK\r\n\r\n";
             } else if (urlPath.startsWith("/echo/")) {
                 String echoStr = urlPath.substring(6); // Extract the string after "/echo/"
-                String contentEncoding = headers.get("Accept-Encoding");
-                if ("gzip".equalsIgnoreCase(contentEncoding)) {
+                String acceptEncoding = headers.get("Accept-Encoding");
+                boolean supportsGzip = false;
+                if (acceptEncoding != null) {
+                    String[] encodings = acceptEncoding.split(",");
+                    for (String encoding : encodings) {
+                        if ("gzip".equalsIgnoreCase(encoding.trim())) {
+                            supportsGzip = true;
+                            break;
+                        }
+                    }
+                }
+                if (supportsGzip) {
                     httpResponse = "HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\nContent-Type: text/plain\r\nContent-Length: " + echoStr.length() + "\r\n\r\n" + echoStr;
                 } else {
                     httpResponse = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " + echoStr.length() + "\r\n\r\n" + echoStr;
