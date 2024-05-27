@@ -99,20 +99,29 @@ public class Main {
             }
         } else if ("POST".equals(httpMethod) && urlPath.startsWith("/files/")) {
             String filename = urlPath.substring(7); // Extract the filename after "/files/"
+            System.out.println("filename: " + filename);
             File file = new File(directory, filename);
-            try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-                String line;
-                while ((line = inputStream.readLine()) != null && !line.isEmpty()) {
-                    writer.write(line);
-                    writer.newLine();
+            if (!file.getCanonicalPath().startsWith(new File(directory).getCanonicalPath())) {
+                httpResponse = "HTTP/1.1 403 Forbidden\r\n\r\n";
+            } else {
+                // Get the length of the request body
+                int contentLength = Integer.parseInt(headers.get("Content-Length"));
+                char[] buffer = new char[contentLength];
+                int bytesRead = inputStream.read(buffer, 0, contentLength);
+                if (bytesRead == contentLength) {
+                    // Write the request body to the file
+                    try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+                        writer.write(buffer, 0, bytesRead);
+                    }
+                    httpResponse = "HTTP/1.1 201 Created\r\n\r\n";
+                } else {
+                    httpResponse = "HTTP/1.1 500 Internal Server Error\r\n\r\n";
                 }
-            } catch (IOException e) {
-                System.out.println("IOException: " + e.getMessage());
             }
-            httpResponse = "HTTP/1.1 201 Created\r\n\r\n";
         } else {
             httpResponse = "HTTP/1.1 404 Not Found\r\n\r\n";
         }
+
         return httpResponse;
     }
 }
