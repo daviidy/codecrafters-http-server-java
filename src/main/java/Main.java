@@ -101,7 +101,8 @@ public class Main {
                         gzipOutputStream.write(echoStr.getBytes("UTF-8"));
                     }
                     byte[] gzipData = byteArrayOutputStream.toByteArray();
-                    httpResponse = "HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\nContent-Type: text/plain\r\nContent-Length: " + gzipData.length + "\r\n\r\n" + Arrays.toString(gzipData);
+                    echoStr = new String(gzipData);
+                    httpResponse = "HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\nContent-Type: text/plain\r\nContent-Length: " + gzipData.length + "\r\n\r\n" + echoStr;
                 } else {
                     httpResponse = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " + echoStr.length() + "\r\n\r\n" + echoStr;
                 }
