@@ -81,7 +81,12 @@ public class Main {
                 httpResponse = "HTTP/1.1 200 OK\r\n\r\n";
             } else if (urlPath.startsWith("/echo/")) {
                 String echoStr = urlPath.substring(6); // Extract the string after "/echo/"
-                httpResponse = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " + echoStr.length() + "\r\n\r\n" + echoStr;
+                String contentEncoding = headers.get("Accept-Encoding");
+                if ("gzip".equalsIgnoreCase(contentEncoding)) {
+                    httpResponse = "HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\nContent-Type: text/plain\r\nContent-Length: " + echoStr.length() + "\r\n\r\n" + echoStr;
+                } else {
+                    httpResponse = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " + echoStr.length() + "\r\n\r\n" + echoStr;
+                }
             } else if ("/user-agent".equals(urlPath)) {
                 String userAgent = headers.get("User-Agent");
                 httpResponse = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " + userAgent.length() + "\r\n\r\n" + userAgent;
@@ -99,7 +104,6 @@ public class Main {
             }
         } else if ("POST".equals(httpMethod) && urlPath.startsWith("/files/")) {
             String filename = urlPath.substring(7); // Extract the filename after "/files/"
-            System.out.println("filename: " + filename);
             File file = new File(directory, filename);
             if (!file.getCanonicalPath().startsWith(new File(directory).getCanonicalPath())) {
                 httpResponse = "HTTP/1.1 403 Forbidden\r\n\r\n";
